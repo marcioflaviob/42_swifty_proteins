@@ -1,4 +1,5 @@
 name: swifty_proteins_42
+version: 1.0.0+1
 
 environment:
   sdk: '^3.8.0'
@@ -8,8 +9,14 @@ dependencies:
     sdk: flutter
   http: ^0.13.6
   provider: ^6.1.1
+  sqflite: ^2.3.0
+  path: ^1.8.3
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
