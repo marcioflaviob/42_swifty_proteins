@@ -1,13 +1,13 @@
 class Protein {
   final String name;
   final String formula;
-  final String description;
+  final String complete_name;
   final int atomCount;
 
   const Protein({
     required this.name,
     required this.formula,
-    required this.description,
+    required this.complete_name,
     required this.atomCount,
   });
 
@@ -16,7 +16,7 @@ class Protein {
     return Protein(
       name: json['name'] ?? '',
       formula: json['formula'] ?? '',
-      description: json['description'] ?? '',
+      complete_name: json['complete_name'] ?? '',
       atomCount: json['atomCount'] ?? 0,
     );
   }
@@ -26,7 +26,7 @@ class Protein {
     return {
       'name': name,
       'formula': formula,
-      'description': description,
+      'complete_name': complete_name,
       'atomCount': atomCount,
     };
   }

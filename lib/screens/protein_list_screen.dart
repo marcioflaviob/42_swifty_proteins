@@ -13,6 +13,7 @@ class ProteinListScreen extends StatefulWidget {
 
 class _ProteinListScreenState extends State<ProteinListScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -21,12 +22,31 @@ class _ProteinListScreenState extends State<ProteinListScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProteinProvider>().loadProteins();
     });
+
+    // Add scroll listener for pagination
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    // Check if user has scrolled to near the bottom
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      final provider = context.read<ProteinProvider>();
+
+      // Load more data if available and not currently loading
+      if (provider.hasMoreData &&
+          !provider.isLoadingMore &&
+          provider.searchQuery.isEmpty) {
+        provider.loadMoreProteins();
+      }
+    }
   }
 
   @override
@@ -80,15 +100,13 @@ class _ProteinListScreenState extends State<ProteinListScreen> {
               },
             ),
           ),
-          
+
           // Protein List
           Expanded(
             child: Consumer<ProteinProvider>(
               builder: (context, proteinProvider, child) {
                 if (proteinProvider.isLoading) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
+                  return const Center(child: CircularProgressIndicator());
                 }
 
                 if (proteinProvider.errorMessage.isNotEmpty) {
@@ -149,8 +167,16 @@ class _ProteinListScreenState extends State<ProteinListScreen> {
                 return RefreshIndicator(
                   onRefresh: proteinProvider.loadProteins,
                   child: ListView.builder(
-                    itemCount: proteinProvider.proteins.length,
+                    itemCount:
+                        proteinProvider.proteins.length +
+                        (proteinProvider.hasMoreData &&
+                                proteinProvider.searchQuery.isEmpty
+                            ? 1
+                            : 0),
                     itemBuilder: (context, index) {
+                      if (index == proteinProvider.proteins.length) {
+                        return _buildLoadingIndicator(proteinProvider);
+                      }
                       final protein = proteinProvider.proteins[index];
                       return ProteinCard(
                         protein: protein,
@@ -158,9 +184,8 @@ class _ProteinListScreenState extends State<ProteinListScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ProteinDetailScreen(
-                                protein: protein,
-                              ),
+                              builder: (context) =>
+                                  ProteinDetailScreen(protein: protein),
                             ),
                           );
                         },
@@ -174,5 +199,34 @@ class _ProteinListScreenState extends State<ProteinListScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildLoadingIndicator(ProteinProvider provider) {
+    if (provider.isLoadingMore) {
+      return const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    } else if (provider.hasMoreData && provider.searchQuery.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Center(
+          child: ElevatedButton(
+            onPressed: () => provider.loadMoreProteins(),
+            child: const Text('Load More'),
+          ),
+        ),
+      );
+    } else {
+      return const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Center(
+          child: Text(
+            'No more proteins to load',
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
+      );
+    }
   }
 }
