@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 import '../services/database_service.dart';
 
@@ -22,6 +23,15 @@ class AuthProvider with ChangeNotifier {
       User? user = await _databaseService.loginUser(username, password);
       if (user != null) {
         _currentUser = user;
+        
+        final prefs = await SharedPreferences.getInstance();
+        final storedUsername = prefs.getString('biometric_username');
+        
+        if (storedUsername != null && storedUsername != username) {
+          await _clearBiometricLogin();
+        }
+        
+        await _storeUserForBiometricLogin(username);
         notifyListeners();
         return true;
       } else {
@@ -36,6 +46,63 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> loginWithBiometrics() async {
+    _setLoading(true);
+    _errorMessage = '';
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final storedUsername = prefs.getString('biometric_username');
+      
+      if (storedUsername == null) {
+        _errorMessage = 'No user registered for biometric login';
+        return false;
+      }
+
+      if (await _databaseService.userExists(storedUsername)) {
+        _currentUser = User(id: 0, username: storedUsername);
+        
+        final dbUser = await _databaseService.getUserByUsername(storedUsername);
+        if (dbUser != null) {
+          _currentUser = dbUser;
+        }
+        
+        notifyListeners();
+        return true;
+      } else {
+        _errorMessage = 'User no longer exists';
+
+        await _clearBiometricLogin();
+        return false;
+      }
+    } catch (e) {
+      _errorMessage = 'Biometric login failed: $e';
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> _storeUserForBiometricLogin(String username) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('biometric_username', username);
+    await prefs.setBool('canUseBiometrics', true);
+  }
+
+  Future<void> _clearBiometricLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('biometric_username');
+    await prefs.setBool('canUseBiometrics', false);
+  }
+
+  Future<bool> canUseBiometricLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    final canUseBiometrics = prefs.getBool('canUseBiometrics') ?? false;
+    final storedUsername = prefs.getString('biometric_username');
+    
+    return canUseBiometrics && storedUsername != null;
+  }
+
   Future<bool> register(String username, String password) async {
     _setLoading(true);
     _errorMessage = '';
@@ -48,7 +115,6 @@ class AuthProvider with ChangeNotifier {
 
       bool success = await _databaseService.registerUser(username, password);
       if (success) {
-        // Automatically log in after registration
         return await login(username, password);
       } else {
         _errorMessage = 'Registration failed';
@@ -65,6 +131,13 @@ class AuthProvider with ChangeNotifier {
   void logout() {
     _currentUser = null;
     _errorMessage = '';
+    notifyListeners();
+  }
+
+  Future<void> logoutAndClearBiometrics() async {
+    _currentUser = null;
+    _errorMessage = '';
+    await _clearBiometricLogin();
     notifyListeners();
   }
 

@@ -89,4 +89,18 @@ class DatabaseService {
     );
     return maps.isNotEmpty;
   }
+
+  Future<User?> getUserByUsername(String username) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'users',
+      where: 'username = ?',
+      whereArgs: [username],
+    );
+
+    if (maps.isNotEmpty) {
+      return User.fromJson(maps.first);
+    }
+    return null;
+  }
 }
