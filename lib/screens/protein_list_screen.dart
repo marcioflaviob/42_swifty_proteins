@@ -19,7 +19,6 @@ class _ProteinListScreenState extends State<ProteinListScreen> {
   @override
   void initState() {
     super.initState();
-    // Load proteins when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProteinProvider>().loadProteins();
     });
@@ -35,14 +34,16 @@ class _ProteinListScreenState extends State<ProteinListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Protein Database'),
+        title: Text(
+            'Logged in as ${context.watch<AuthProvider>().currentUser?.username ?? 'Guest'}',
+          ),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Logout',
             onPressed: () {
-              // Clear authentication state
+              // Clear authentication state but keep biometric data for next login
               context.read<AuthProvider>().logout();
               // Navigate to login with proper animation
               Navigator.of(context).pushAndRemoveUntil(

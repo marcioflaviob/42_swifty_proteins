@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'protein_list_screen.dart';
+import '../services/biometric_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLogin = true;
   bool _obscurePassword = true;
+  bool _isBiometricLoading = false;
 
   @override
   void dispose() {
@@ -31,11 +33,13 @@ class _LoginScreenState extends State<LoginScreen> {
         title: Text(_isLogin ? 'Login' : 'Register'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Consumer<AuthProvider>(
-          builder: (context, authProvider, child) {
-            return Form(
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Consumer<AuthProvider>(
+              builder: (context, authProvider, child) {
+                return Form(
               key: _formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -139,6 +143,22 @@ class _LoginScreenState extends State<LoginScreen> {
                           )
                         : Text(_isLogin ? 'Login' : 'Register'),
                   ),
+                  ElevatedButton(
+                    onPressed: (_isBiometricLoading || authProvider.isLoading) ? null : _handleBiometricLogin,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: _isBiometricLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Login with FaceID/TouchID'),
+                  ),
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: authProvider.isLoading
@@ -173,8 +193,88 @@ class _LoginScreenState extends State<LoginScreen> {
             );
           },
         ),
+        ),
+        if (_isBiometricLoading)
+          Container(
+            color: Colors.black.withOpacity(0.3),
+            child: const Center(
+              child: SizedBox(),
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  Future<void> _handleBiometricLogin() async {
+    setState(() {
+      _isBiometricLoading = true;
+    });
+
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final canUseBiometrics = await authProvider.canUseBiometricLogin();
+      final biometricService = BiometricService();
+      final deviceSupportsBiometrics = await biometricService.canCheckBiometrics();
+      
+      if (!deviceSupportsBiometrics) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Biometric authentication is not available on this device'),
+            ),
+          );
+        }
+        return;
+      }
+      
+      if (!canUseBiometrics) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please login with username and password first to enable biometric login'),
+            ),
+          );
+        }
+        return;
+      }
+      
+      final authenticated = await biometricService.authenticate();
+      
+      if (authenticated) {
+        final success = await authProvider.loginWithBiometrics();
+        if (success && mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ProteinListScreen(),
+            ),
+          );
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(authProvider.errorMessage.isNotEmpty 
+                ? authProvider.errorMessage 
+                : 'Biometric login failed'),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Authentication error: $e'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBiometricLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> _handleSubmit() async {
