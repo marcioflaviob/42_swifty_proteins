@@ -1,4 +1,5 @@
 name: swifty_proteins_42
+version: 1.0.0+1
 
 environment:
   sdk: '^3.8.0'
@@ -9,6 +10,11 @@ dependencies:
   http: ^0.13.6
   provider: ^6.1.1
   webview_flutter: ^4.13.0
+  sqflite: ^2.3.0
+  path: ^1.8.3
+  crypto: ^3.0.3
+  local_auth: ^2.1.6
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:

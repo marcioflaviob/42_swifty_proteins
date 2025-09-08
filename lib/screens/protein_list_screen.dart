@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/protein_provider.dart';
+import '../providers/auth_provider.dart';
 import '../widgets/protein_card.dart';
+import 'login_screen.dart';
 import 'protein_detail_screen.dart';
 
 class ProteinListScreen extends StatefulWidget {
@@ -18,7 +20,6 @@ class _ProteinListScreenState extends State<ProteinListScreen> {
   @override
   void initState() {
     super.initState();
-    // Load proteins when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProteinProvider>().loadProteins();
     });
@@ -53,13 +54,34 @@ class _ProteinListScreenState extends State<ProteinListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Protein Database'),
+        title: Text(
+            'Logged in as ${context.watch<AuthProvider>().currentUser?.username ?? 'Guest'}',
+          ),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
             onPressed: () {
-              context.read<ProteinProvider>().loadProteins();
+              // Clear authentication state but keep biometric data for next login
+              context.read<AuthProvider>().logout();
+              // Navigate to login with proper animation
+              Navigator.of(context).pushAndRemoveUntil(
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    const begin = Offset(-1.0, 0.0);
+                    const end = Offset.zero;
+                    const curve = Curves.ease;
+                    var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                    return SlideTransition(
+                      position: animation.drive(tween),
+                      child: child,
+                    );
+                  },
+                ),
+                (route) => false,
+              );
             },
           ),
         ],
