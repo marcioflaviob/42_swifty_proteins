@@ -5,11 +5,7 @@ class ProteinCard extends StatelessWidget {
   final Protein protein;
   final VoidCallback? onTap;
 
-  const ProteinCard({
-    super.key,
-    required this.protein,
-    this.onTap,
-  });
+  const ProteinCard({super.key, required this.protein, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +61,7 @@ class ProteinCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                protein.description,
+                protein.complete_name,
                 style: Theme.of(context).textTheme.bodyMedium,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

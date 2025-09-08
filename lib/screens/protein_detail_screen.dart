@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/protein.dart';
+import './protein_3d_screen.dart';
 
 class ProteinDetailScreen extends StatelessWidget {
   final Protein protein;
 
-  const ProteinDetailScreen({
-    super.key,
-    required this.protein,
-  });
+  const ProteinDetailScreen({super.key, required this.protein});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +19,9 @@ class ProteinDetailScreen extends StatelessWidget {
             onPressed: () {
               // TODO: Implement share functionality
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Share functionality coming soon!')),
+                const SnackBar(
+                  content: Text('Share functionality coming soon!'),
+                ),
               );
             },
           ),
@@ -42,10 +42,11 @@ class ProteinDetailScreen extends StatelessWidget {
                   children: [
                     Text(
                       protein.name,
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                     ),
                     const SizedBox(height: 16),
                     Container(
@@ -59,7 +60,9 @@ class ProteinDetailScreen extends StatelessWidget {
                         protein.formula,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontFamily: 'monospace',
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -68,9 +71,9 @@ class ProteinDetailScreen extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Description Card
             Card(
               elevation: 2,
@@ -87,25 +90,24 @@ class ProteinDetailScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Description',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          'Complete name',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      protein.description,
+                      protein.complete_name,
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                   ],
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Properties Card
             Card(
               elevation: 2,
@@ -123,9 +125,8 @@ class ProteinDetailScreen extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(
                           'Properties',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -147,9 +148,9 @@ class ProteinDetailScreen extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Action Buttons
             Card(
               elevation: 2,
@@ -170,10 +171,11 @@ class ProteinDetailScreen extends StatelessWidget {
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () {
-                              // TODO: Implement 3D visualization
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('3D visualization coming soon!'),
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      Protein3DScreen(ligandId: protein.name),
                                 ),
                               );
                             },
@@ -188,7 +190,9 @@ class ProteinDetailScreen extends StatelessWidget {
                               // TODO: Implement download
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Download feature coming soon!'),
+                                  content: Text(
+                                    'Download feature coming soon!',
+                                  ),
                                 ),
                               );
                             },
@@ -217,11 +221,7 @@ class ProteinDetailScreen extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: Theme.of(context).colorScheme.tertiary,
-        ),
+        Icon(icon, size: 20, color: Theme.of(context).colorScheme.tertiary),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -238,7 +238,9 @@ class ProteinDetailScreen extends StatelessWidget {
               Text(
                 value,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontFamily: value.contains(RegExp(r'[A-Z]\d')) ? 'monospace' : null,
+                  fontFamily: value.contains(RegExp(r'[A-Z]\d'))
+                      ? 'monospace'
+                      : null,
                 ),
               ),
             ],
