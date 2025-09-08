@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import '../models/protein.dart';
 import '../services/protein_service.dart';
-import 'package:flutter/services.dart'; // Add this import
+import 'package:flutter/services.dart';
+import 'dart:async';
 
 class ProteinProvider with ChangeNotifier {
   final ProteinService _proteinService = ProteinService();
 
   List<Protein> _proteins = [];
+  List<Protein> _allProteins = [];
   bool _isLoading = false;
   bool _isLoadingMore = false;
   String _error = '';
@@ -17,6 +19,9 @@ class ProteinProvider with ChangeNotifier {
   final int _itemsPerPage = 5;
   bool _hasMoreData = true;
   List<String> _allLigandIds = [];
+
+  Timer? _debounceTimer;
+  final Duration _debounceDuration = const Duration(milliseconds: 500);
 
   // Getters
   List<Protein> get proteins => _proteins;
@@ -107,30 +112,23 @@ class ProteinProvider with ChangeNotifier {
     print('Loading page $_currentPage: ${pageIds.length} proteins');
 
     // Fetch proteins for this page
-    List<Protein> pageProteins = [];
     for (String ligandId in pageIds) {
       try {
         final protein = await _proteinService.fetchProteinById(ligandId);
-        pageProteins.add(protein);
+
+        _proteins.add(protein);
+        if (!_allProteins.any((p) => p.name == protein.name)) {
+          _allProteins.add(protein);
+        }
 
         // Small delay to avoid overwhelming the API
-        await Future.delayed(const Duration(milliseconds: 100));
+        // await Future.delayed(const Duration(milliseconds: 100));
       } catch (e) {
         print('Failed to fetch protein for $ligandId: $e');
         // Add placeholder protein
-        pageProteins.add(
-          Protein(
-            name: ligandId,
-            formula: 'Unknown',
-            complete_name: 'Protein data could not be retrieved',
-            atomCount: 0,
-          ),
-        );
       }
     }
 
-    // Add new proteins to the list
-    _proteins.addAll(pageProteins);
     _currentPage++;
 
     // Check if we've reached the end
@@ -139,25 +137,66 @@ class ProteinProvider with ChangeNotifier {
     }
   }
 
-  // Search proteins
   Future<void> searchProteins(String query) async {
     _searchQuery = query;
 
+    // Cancel the previous timer if it exists
+    _debounceTimer?.cancel();
+
+    // If query is empty, clear search immediately
     if (query.isEmpty) {
-      // If search is cleared, reload from beginning
       await loadProteins();
       return;
     }
 
+    // Set up a new timer
+    _debounceTimer = Timer(_debounceDuration, () async {
+      await _performSearch(query);
+    });
+  }
+
+  // Search proteins
+  Future<void> _performSearch(String query) async {
     _isLoading = true;
     _error = '';
     notifyListeners();
 
     try {
-      // For search, we'll search through already loaded proteins
-      // and also search the mock data
-      final searchResults = await _proteinService.searchProteins(query);
+      var searchResults = _allProteins
+          .where(
+            (protein) =>
+                protein.name.toLowerCase().contains(query.toLowerCase()),
+          )
+          .toList();
+      if (searchResults.isEmpty) {
+        final matchingIds = _allLigandIds
+            .where((id) => id.toLowerCase().contains(query.toLowerCase()))
+            .take(5)
+            .toList();
+        if (matchingIds.isNotEmpty) {
+          try {
+            final futureProteins = matchingIds
+                .map((id) => _proteinService.fetchProteinById(id))
+                .toList();
+            searchResults = await Future.wait(futureProteins);
+            if (searchResults.isEmpty == false) {
+              for (var newProtein in searchResults) {
+                if (!_allProteins.any((p) => p.name == newProtein.name)) {
+                  _allProteins.add(newProtein);
+                }
+              }
+            }
+          } catch (e) {
+            print('Failed to fetch some search results: $e');
+            _error = 'Error during search. Please try again.';
+            searchResults = [];
+          }
+        }
+      }
       _proteins = searchResults;
+      if (_proteins.isEmpty) {
+        _error = 'No protein found for "$query"';
+      }
       _hasMoreData = false; // Disable pagination for search results
     } catch (e) {
       _error = 'Search failed: $e';
@@ -169,6 +208,13 @@ class ProteinProvider with ChangeNotifier {
 
   void clearSearch() {
     _searchQuery = '';
+    _debounceTimer?.cancel();
     loadProteins();
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/protein.dart';
+import './protein_3d_screen.dart';
 
 class ProteinDetailScreen extends StatelessWidget {
   final Protein protein;
@@ -170,12 +171,11 @@ class ProteinDetailScreen extends StatelessWidget {
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () {
-                              // TODO: Implement 3D visualization
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    '3D visualization coming soon!',
-                                  ),
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      Protein3DScreen(ligandId: protein.name),
                                 ),
                               );
                             },

@@ -4,6 +4,7 @@ import 'providers/protein_provider.dart';
 import 'screens/protein_list_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const SwiftyProteinsApp());
 }
 

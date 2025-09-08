@@ -1,43 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/protein.dart';
-import 'package:flutter/services.dart';
 
 class ProteinService {
-  // Simulate fetching proteins from an API
-  Future<List<Protein>> fetchProteins() async {
-    final String fileContent = await rootBundle.loadString(
-      'assets/ligands.txt',
-    );
-    final List<String> ligandIds = fileContent
-        .split('\n')
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .toList();
-
-    List<Protein> proteins = [];
-
-    for (int i = 0; i < ligandIds.length; i++) {
-      print('Fetching protein for ligand ID: ${ligandIds[i]}');
-      final String ligandId = ligandIds[i];
-      try {
-        final protein = await fetchProteinById(ligandId);
-        proteins.add(protein);
-        await Future.delayed(const Duration(milliseconds: 100));
-      } catch (e) {
-        proteins.add(
-          Protein(
-            name: ligandId,
-            formula: 'Unknown',
-            complete_name: 'Protein data could not be retrieved',
-            atomCount: 0,
-          ),
-        );
-      }
-    }
-    return proteins;
-  }
-
+  // Your existing function for basic protein info
   Future<Protein> fetchProteinById(String ligandId) async {
     try {
       final response = await http.get(
@@ -54,35 +20,27 @@ class ProteinService {
           atomCount: jsonData['rcsb_chem_comp_info']?['atom_count'],
         );
       }
+      throw Exception('Failed to load protein data for $ligandId');
     } catch (e) {
       print('API error for $ligandId: $e');
-      return Protein(
-        name: ligandId,
-        formula: 'Unknown',
-        complete_name: 'Protein data could not be retrieved',
-        atomCount: 0,
-      );
+      throw Exception('Failed to load protein data for $ligandId');
     }
-    return Protein(
-      name: ligandId,
-      formula: 'Unknown',
-      complete_name: 'Protein data could not be retrieved',
-      atomCount: 0,
-    );
   }
 
-  // Search proteins by name
-  Future<List<Protein>> searchProteins(String query) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    // if (query.isEmpty) {
-    //   return _mockProteins;
-    // }
-
-    return _mockProteins
-        .where(
-          (protein) => protein.name.toLowerCase().contains(query.toLowerCase()),
-        )
-        .toList();
+  Future<String?> fetchLigandSDF(String ligandId) async {
+    final url = 'https://files.rcsb.org/ligands/view/${ligandId}_ideal.sdf';
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        print('Successfully fetched SDF for $ligandId');
+        return response.body;
+      } else {
+        print('Failed to fetch SDF: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching ligand SDF: $e');
+      return null;
+    }
   }
 }
