@@ -4,6 +4,7 @@ import 'providers/protein_provider.dart';
 import 'providers/auth_provider.dart';
 import 'screens/protein_list_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/splash_screen.dart';
 import 'utils/auth_navigator_observer.dart';
 
 void main() async {
@@ -58,16 +59,9 @@ class _SwiftyProteinsAppState extends State<SwiftyProteinsApp> with WidgetsBindi
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      navigatorObservers: [_authNavigatorObserver],
       initialRoute: '/',
       routes: {
-        '/': (context) => Consumer<AuthProvider>(
-          builder: (context, authProvider, child) {
-            return authProvider.isAuthenticated 
-                ? const ProteinListScreen() 
-                : const LoginScreen();
-          },
-        ),
+        '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
         '/proteins': (context) => const ProteinListScreen(),
       },
