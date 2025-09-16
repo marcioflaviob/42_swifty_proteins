@@ -110,10 +110,9 @@ class Protein3DScreen extends StatelessWidget {
           let viewer = \$3Dmol.createViewer("viewer", { backgroundColor: "white" });
           let sdfData = $encodedSdfContent;
           viewer.addModel(sdfData, "sdf");
-
           viewer.setStyle({}, {
-            stick: {}, 
-            sphere: {scale: 0.3},
+            stick: {colorscheme: "Jmol"}, 
+            sphere: {scale: 0.3, colorscheme: "Jmol"},
             clickable: true,
             hoverable: true
           });
