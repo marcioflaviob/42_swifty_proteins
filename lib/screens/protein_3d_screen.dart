@@ -30,9 +30,25 @@ class Protein3DScreen extends StatelessWidget {
           if (snapshot.hasError ||
               !snapshot.hasData ||
               snapshot.data!.isEmpty) {
-            return const Center(child: Text('Could not load 3D model.'));
+            // Show warning popup
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Warning'),
+                  content: const Text('Could not load 3D model.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('OK'),
+                    ),
+                  ],
+                ),
+              );
+            });
+            // Optionally, show an empty container or a fallback widget
+            return const SizedBox.shrink();
           }
-
           final encodedSdfContent = jsonEncode(snapshot.data!);
 
           final htmlContent =
