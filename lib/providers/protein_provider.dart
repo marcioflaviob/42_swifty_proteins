@@ -212,6 +212,33 @@ class ProteinProvider with ChangeNotifier {
     loadProteins();
   }
 
+  // Search for a specific protein by ID (for deep linking)
+  Future<Protein?> searchForSpecificProtein(String proteinId) async {
+    try {
+      // First check if we already have it in our cache
+      final existingProtein = _allProteins
+          .where((protein) => protein.name.toLowerCase() == proteinId.toLowerCase())
+          .firstOrNull;
+      
+      if (existingProtein != null) {
+        return existingProtein;
+      }
+
+      // If not found in cache, try to fetch it from the service
+      final protein = await _proteinService.fetchProteinById(proteinId);
+      
+      // Add to cache if successfully fetched
+      if (!_allProteins.any((p) => p.name == protein.name)) {
+        _allProteins.add(protein);
+      }
+      
+      return protein;
+    } catch (e) {
+      print('Failed to fetch protein for $proteinId: $e');
+      return null;
+    }
+  }
+
   @override
   void dispose() {
     _debounceTimer?.cancel();
