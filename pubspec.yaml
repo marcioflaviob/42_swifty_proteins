@@ -27,3 +27,4 @@ flutter:
   # Add this assets section
   assets:
     - assets/ligands.txt
+    - assets/app_icon.png
