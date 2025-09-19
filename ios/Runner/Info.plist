@@ -22,25 +22,10 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLName</key>
-			<string>swiftyproteins.deeplink</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>swiftyproteins</string>
-			</array>
-		</dict>
-	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSBiometricUsageDescription</key>
-	<string>This app uses biometrics to securely log you in without a password.</string>
-	<key>NSFaceIDUsageDescription</key>
-	<string>This app uses Face ID to securely log you in without a password.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
