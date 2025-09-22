@@ -30,7 +30,7 @@ class SwiftyProteinsApp extends StatefulWidget {
 
 class _SwiftyProteinsAppState extends State<SwiftyProteinsApp> with WidgetsBindingObserver {
   final AuthNavigatorObserver _authNavigatorObserver = AuthNavigatorObserver();
-
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   @override
   void initState() {
     super.initState();
@@ -47,7 +47,13 @@ class _SwiftyProteinsAppState extends State<SwiftyProteinsApp> with WidgetsBindi
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
-      Provider.of<AuthProvider>(context, listen: false).logout();
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      authProvider.logout();
+      
+      // Navigate to login screen
+      if (_navigatorKey.currentState != null) {
+        _navigatorKey.currentState!.pushNamedAndRemoveUntil('/login', (route) => false);
+      }
     }
   }
 
@@ -55,6 +61,7 @@ class _SwiftyProteinsAppState extends State<SwiftyProteinsApp> with WidgetsBindi
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Swifty Proteins',
+      navigatorKey: _navigatorKey,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,

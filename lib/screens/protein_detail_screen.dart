@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/protein.dart';
+import '../services/share_service.dart';
 import './protein_3d_screen.dart';
 import './protein_ngl3d_screen.dart';
 
@@ -14,6 +15,12 @@ class ProteinDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(protein.name),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: () => _shareProtein(context),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -197,6 +204,22 @@ class ProteinDetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _shareProtein(BuildContext context) async {
+    try {
+      final shareService = ShareService();
+      await shareService.shareProtein(protein);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to share protein: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildPropertyRow(
