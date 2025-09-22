@@ -175,7 +175,7 @@ class ProteinDetailScreen extends StatelessWidget {
                               );
                             },
                             icon: const Icon(Icons.view_in_ar),
-                            label: const Text('3Dmol'),
+                            label: const Text('Model 1'),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -191,7 +191,7 @@ class ProteinDetailScreen extends StatelessWidget {
                               );
                             },
                             icon: const Icon(Icons.view_in_ar),
-                            label: const Text('NGL'),
+                            label: const Text('Model 2'),
                           ),
                         ),
                       ],
