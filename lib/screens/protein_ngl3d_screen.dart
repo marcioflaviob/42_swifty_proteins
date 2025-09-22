@@ -67,7 +67,7 @@ class ProteinNGLScreen extends StatelessWidget {
     var sdfUrl = URL.createObjectURL(blob);
 
     stage.loadFile(sdfUrl, {ext: "sdf"}).then(function(comp) {
-      comp.addRepresentation("ball+stick");
+      comp.addRepresentation("hyperball");
       comp.autoView();
 
       comp.structure.eachAtom(function(atom) {
