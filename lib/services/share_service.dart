@@ -1,18 +1,14 @@
 import 'package:share_plus/share_plus.dart';
 import '../models/protein.dart';
-import 'deep_link_service.dart';
 
 class ShareService {
   static final ShareService _instance = ShareService._internal();
   factory ShareService() => _instance;
   ShareService._internal();
 
-  final DeepLinkService _deepLinkService = DeepLinkService();
 
-  /// Share a protein with a deep link
   Future<void> shareProtein(Protein protein) async {
     try {
-      final String deepLink = _deepLinkService.generateProteinLink(protein.name);
       
       final String shareText = '''
 Check out this protein: ${protein.name}
