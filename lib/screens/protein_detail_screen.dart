@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/protein.dart';
 import '../services/share_service.dart';
 import './protein_3d_screen.dart';
+import './protein_ngl3d_screen.dart';
 
 class ProteinDetailScreen extends StatelessWidget {
   final Protein protein;
@@ -174,24 +175,23 @@ class ProteinDetailScreen extends StatelessWidget {
                               );
                             },
                             icon: const Icon(Icons.view_in_ar),
-                            label: const Text('View 3D'),
+                            label: const Text('3Dmol'),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: OutlinedButton.icon(
+                          child: ElevatedButton.icon(
                             onPressed: () {
-                              // TODO: Implement download
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Download feature coming soon!',
-                                  ),
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      ProteinNGLScreen(ligandId: protein.name),
                                 ),
                               );
                             },
-                            icon: const Icon(Icons.download),
-                            label: const Text('Download'),
+                            icon: const Icon(Icons.view_in_ar),
+                            label: const Text('NGL'),
                           ),
                         ),
                       ],
