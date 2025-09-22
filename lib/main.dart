@@ -6,7 +6,6 @@ import 'screens/protein_list_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/splash_screen.dart';
 import 'utils/auth_navigator_observer.dart';
-import 'services/deep_link_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,23 +31,16 @@ class SwiftyProteinsApp extends StatefulWidget {
 class _SwiftyProteinsAppState extends State<SwiftyProteinsApp> with WidgetsBindingObserver {
   final AuthNavigatorObserver _authNavigatorObserver = AuthNavigatorObserver();
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
-  final DeepLinkService _deepLinkService = DeepLinkService();
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Initialize deep link service after the first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _deepLinkService.initialize(context);
-    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _authNavigatorObserver.dispose();
-    _deepLinkService.dispose();
     super.dispose();
   }
 

@@ -29,10 +29,8 @@ Download Swifty Proteins to explore protein structures in 3D!
     }
   }
 
-  /// Share a protein with custom text
   Future<void> shareProteinWithText(Protein protein, String customText) async {
     try {
-      final String deepLink = _deepLinkService.generateProteinLink(protein.name);
       
       final String shareText = '''
 $customText

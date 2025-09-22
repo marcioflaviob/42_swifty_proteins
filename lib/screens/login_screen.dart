@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'protein_list_screen.dart';
 import '../services/biometric_service.dart';
-import '../services/deep_link_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -251,10 +250,6 @@ class _LoginScreenState extends State<LoginScreen> {
               builder: (context) => const ProteinListScreen(),
             ),
           );
-          
-          // Check for pending deep link navigation
-          final deepLinkService = DeepLinkService();
-          await deepLinkService.checkPendingNavigation();
         } else if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -307,10 +302,6 @@ class _LoginScreenState extends State<LoginScreen> {
           builder: (context) => const ProteinListScreen(),
         ),
       );
-      
-      // Check for pending deep link navigation
-      final deepLinkService = DeepLinkService();
-      await deepLinkService.checkPendingNavigation();
     }
   }
 }
