@@ -21,8 +21,6 @@ ${protein.complete_name}
 Formula: ${protein.formula}
 Atom Count: ${protein.atomCount}
 
-Open in Swifty Proteins: $deepLink
-
 Download Swifty Proteins to explore protein structures in 3D!
 ''';
 
@@ -46,7 +44,6 @@ $customText
 Protein: ${protein.name}
 ${protein.complete_name}
 
-Open in Swifty Proteins: $deepLink
 ''';
 
       await Share.share(
