@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../services/protein_service.dart';
+import '../services/share_service.dart';
 
 class Protein3DScreen extends StatelessWidget {
   final String ligandId;
@@ -18,8 +19,42 @@ class Protein3DScreen extends StatelessWidget {
         print('WebView Console: ${message.message}');
       });
 
+    Future<void> captureAndShare() async {
+      try {
+        final result = await controller.runJavaScriptReturningResult(
+          'capturePng()',
+        );
+        if (result is String && result.isNotEmpty) {
+          // runJavaScriptReturningResult returns a JSON-encoded string on iOS; decode if quoted
+          final String dataUrl = result.startsWith('"')
+              ? jsonDecode(result)
+              : result;
+          await ShareService().shareDataUrl(
+            dataUrl,
+            fileName: '$ligandId-3dmol.png',
+            subject: '3D Model (3Dmol): $ligandId',
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to capture image: $e')),
+          );
+        }
+      }
+    }
+
     return Scaffold(
-      appBar: AppBar(title: Text('3D View: $ligandId')),
+      appBar: AppBar(
+        title: Text('3D View: $ligandId'),
+        actions: [
+          IconButton(
+            onPressed: captureAndShare,
+            icon: const Icon(Icons.share),
+            tooltip: 'Share image',
+          ),
+        ],
+      ),
       body: FutureBuilder<String?>(
         future: proteinService.fetchLigandSDF(ligandId),
         builder: (context, snapshot) {
@@ -52,7 +87,7 @@ class Protein3DScreen extends StatelessWidget {
           final encodedSdfContent = jsonEncode(snapshot.data!);
 
           final htmlContent =
-              '''
+              r'''
 <!DOCTYPE html>
 <html>
 <head>
@@ -102,22 +137,30 @@ class Protein3DScreen extends StatelessWidget {
   </div>
 
   <script>
-    if (typeof \$3Dmol === 'undefined') {
+    window.capturePng = function() { try {
+      if (typeof window.viewer !== 'undefined' && window.viewer) {
+        return window.viewer.pngURI();
+      }
+      return '';
+    } catch (e) { return ''; } };
+    if (typeof $3Dmol === 'undefined') {
         document.body.innerHTML = `<div style="color: red; padding: 10px;">Error: 3Dmol.js library failed to load. Check internet connection.</div>`;
     } else {
         try {
           const atomicNumbers = { 'H': 1, 'He': 2, 'Li': 3, 'Be': 4, 'B': 5, 'C': 6, 'N': 7, 'O': 8, 'F': 9, 'Ne': 10, 'Na': 11, 'Mg': 12, 'Al': 13, 'Si': 14, 'P': 15, 'S': 16, 'Cl': 17, 'Ar': 18, 'K': 19, 'Ca': 20, 'Br': 35, 'I': 53 };
-          let viewer = \$3Dmol.createViewer("viewer", { backgroundColor: "white" });
-          let sdfData = $encodedSdfContent;
-          viewer.addModel(sdfData, "sdf");
-          viewer.setStyle({}, {
+          window.viewer = $3Dmol.createViewer("viewer", { backgroundColor: "white" });
+          let sdfData = ''' +
+              encodedSdfContent +
+              r''';
+          window.viewer.addModel(sdfData, "sdf");
+          window.viewer.setStyle({}, {
             stick: {colorscheme: "Jmol"}, 
             sphere: {scale: 0.3, colorscheme: "Jmol"},
             clickable: true,
             hoverable: true
           });
 
-          viewer.setClickable({}, true, function(atom, viewer, event, container) {
+          window.viewer.setClickable({}, true, function(atom, viewer, event, container) {
             let popup = document.getElementById('popup');
             if (atom) {
               let symbol = atom.elem;
@@ -142,8 +185,8 @@ class Protein3DScreen extends StatelessWidget {
               }
             }, 10);
           });
-          viewer.zoomTo();
-          viewer.render();
+          window.viewer.zoomTo();
+          window.viewer.render();
         } catch (e) {
           document.body.innerHTML = `<div style="color: red; padding: 10px;">Error: \${e.message}</div>`;
         }

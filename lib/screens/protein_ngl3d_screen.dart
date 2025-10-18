@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../services/protein_service.dart';
+import '../services/share_service.dart';
 
 class ProteinNGLScreen extends StatelessWidget {
   final String ligandId;
@@ -18,8 +19,41 @@ class ProteinNGLScreen extends StatelessWidget {
         print('WebView Console: ${message.message}');
       });
 
+    Future<void> captureAndShare() async {
+      try {
+        final result = await controller.runJavaScriptReturningResult(
+          'capturePng()',
+        );
+        if (result is String && result.isNotEmpty) {
+          final String dataUrl = result.startsWith('"')
+              ? jsonDecode(result)
+              : result;
+          await ShareService().shareDataUrl(
+            dataUrl,
+            fileName: '$ligandId-ngl.png',
+            subject: '3D Model (NGL): $ligandId',
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to capture image: $e')),
+          );
+        }
+      }
+    }
+
     return Scaffold(
-      appBar: AppBar(title: Text('3D View (NGL): $ligandId')),
+      appBar: AppBar(
+        title: Text('3D View (NGL): $ligandId'),
+        actions: [
+          IconButton(
+            onPressed: captureAndShare,
+            icon: const Icon(Icons.share),
+            tooltip: 'Share image',
+          ),
+        ],
+      ),
       body: FutureBuilder<String?>(
         future: proteinService.fetchLigandSDF(ligandId),
         builder: (context, snapshot) {
@@ -35,7 +69,7 @@ class ProteinNGLScreen extends StatelessWidget {
           final encodedSdfContent = jsonEncode(snapshot.data!);
 
           final htmlContent =
-              '''
+              r'''
 <!DOCTYPE html>
 <html>
 <head>
@@ -61,8 +95,18 @@ class ProteinNGLScreen extends StatelessWidget {
   <div id="viewport"></div>
   <div id="popup"></div>
   <script>
-    var stage = new NGL.Stage("viewport", {backgroundColor: "white"});
-    var sdfData = $encodedSdfContent;
+    window.__lastDataUrl = '';
+    function __updateLastImage() {
+      try {
+        var canvas = document.querySelector('canvas');
+        if (canvas) { window.__lastDataUrl = canvas.toDataURL('image/png'); }
+      } catch (e) { /* ignore */ }
+    }
+    window.capturePng = function() { try { __updateLastImage(); return window.__lastDataUrl || ''; } catch (e) { return ''; } };
+  var stage = new NGL.Stage("viewport", {backgroundColor: "white"});
+  var sdfData = ''' +
+              encodedSdfContent +
+              r''';
     var blob = new Blob([sdfData], {type: "text/plain"});
     var sdfUrl = URL.createObjectURL(blob);
 
