@@ -25,7 +25,6 @@ class Protein3DScreen extends StatelessWidget {
           'capturePng()',
         );
         if (result is String && result.isNotEmpty) {
-          // runJavaScriptReturningResult returns a JSON-encoded string on iOS; decode if quoted
           final String dataUrl = result.startsWith('"')
               ? jsonDecode(result)
               : result;
@@ -81,7 +80,6 @@ class Protein3DScreen extends StatelessWidget {
                 ),
               );
             });
-            // Optionally, show an empty container or a fallback widget
             return const SizedBox.shrink();
           }
           final encodedSdfContent = jsonEncode(snapshot.data!);
@@ -165,7 +163,7 @@ class Protein3DScreen extends StatelessWidget {
             if (atom) {
               let symbol = atom.elem;
               let atomicNum = atomicNumbers[symbol] || 'N/A';
-              popup.innerHTML = `<strong>\${symbol}</strong><br>Atom #\${atomicNum}`;
+              popup.innerHTML = '<strong>' + symbol + '</strong><br>Atom #' + atomicNum;
               let screenPos = viewer.modelToScreen(atom);
               popup.style.left = (screenPos.x - 45) + 'px';
               popup.style.top = (screenPos.y - 80) + 'px';

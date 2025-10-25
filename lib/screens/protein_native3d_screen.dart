@@ -109,7 +109,7 @@ class _ProteinNative3DScreenState extends State<ProteinNative3DScreen> {
           child: GestureDetector(
             onDoubleTap: () {
               setState(() {
-                _scale = (_scale * 1.25).clamp(0.2, 6.0);
+                _scale = (_scale * 1.25).clamp(0.3, 8.0);
               });
             },
             onScaleStart: (details) {
@@ -120,10 +120,8 @@ class _ProteinNative3DScreenState extends State<ProteinNative3DScreen> {
             onScaleUpdate: (details) {
               setState(() {
                 if (details.pointerCount == 2) {
-                  // Two-finger pinch zooms
-                  _scale = (_baseScale * details.scale).clamp(0.2, 6.0);
+                  _scale = (_baseScale * details.scale).clamp(0.3, 8.0);
                 } else {
-                  // One-finger rotates
                   _yaw += details.focalPointDelta.dx * 0.01;
                   _pitch += details.focalPointDelta.dy * 0.01;
                   _pitch = _pitch.clamp(-math.pi / 2, math.pi / 2);
@@ -139,7 +137,6 @@ class _ProteinNative3DScreenState extends State<ProteinNative3DScreen> {
                 _pitch,
                 _scale,
               );
-              // Find nearest atom within threshold
               final pos = tap.localPosition;
               int? bestIdx;
               double bestDist2 = 1e9;
@@ -150,7 +147,6 @@ class _ProteinNative3DScreenState extends State<ProteinNative3DScreen> {
                   bestIdx = i;
                 }
               }
-              // Dynamic threshold based on perspective-scaled radius
               if (bestIdx != null) {
                 final idx = bestIdx;
                 final r =
@@ -221,7 +217,7 @@ class Atom {
 }
 
 class Bond {
-  final int a1, a2; // 1-based indices in SDF converted to 0-based
+  final int a1, a2;
   final int order;
   Bond(this.a1, this.a2, this.order);
 }
@@ -296,8 +292,8 @@ class SdfParser {
 
 class MoleculePainter extends CustomPainter {
   final Molecule molecule;
-  final double yaw; // rotation around Y
-  final double pitch; // rotation around X
+  final double yaw;
+  final double pitch;
   final double scale;
   final int? selectedAtomIdx;
 
@@ -335,7 +331,6 @@ class MoleculePainter extends CustomPainter {
     'P': 0.35,
   };
 
-  // Reusable projection so gestures and painter stay consistent
   static List<_Pt> projectPoints(
     Molecule molecule,
     Size size,
@@ -376,8 +371,8 @@ class MoleculePainter extends CustomPainter {
       double y2 = y * cosX - z1 * sinX;
       double z2 = y * sinX + z1 * cosX;
 
-      final denom = (camDist - z2).clamp(0.001, double.infinity);
-      final persp = (camDist / denom) * scale;
+      final denom = (camDist - z2).clamp(0.1, double.infinity);
+      final persp = ((camDist / denom) * scale).clamp(0.01, 100.0);
       final px = center.dx + x1 * baseScale * persp;
       final py = center.dy - y2 * baseScale * persp;
       pts.add(_Pt(px, py, z2, a.element, persp));
@@ -389,28 +384,24 @@ class MoleculePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final pts = projectPoints(molecule, size, yaw, pitch, scale);
 
-    // Sort drawing order by z (back to front)
     final order = List<int>.generate(pts.length, (i) => i);
     order.sort((i, j) => pts[i].z.compareTo(pts[j].z));
 
-    // Draw bonds with depth-aware thickness, multi-bond offsets, and color blending
     for (final b in molecule.bonds) {
       final p1 = pts[b.a1];
       final p2 = pts[b.a2];
       final aColor = elementColors[p1.element] ?? const Color(0xFF888888);
       final bColor = elementColors[p2.element] ?? const Color(0xFF888888);
       final avgPersp = (p1.persp + p2.persp) * 0.5;
-      final baseThickness = 2.2 * avgPersp; // responsive to depth
+      final baseThickness = (2.2 * avgPersp).clamp(0.5, 20.0); // responsive to depth
 
-      // Bond vector in screen space
       final dxs = p2.x - p1.x;
       final dys = p2.y - p1.y;
       final len = math.max(1.0, math.sqrt(dxs * dxs + dys * dys));
-      final nx = -dys / len; // perpendicular unit
+      final nx = -dys / len;
       final ny = dxs / len;
       final spacing = baseThickness * 1.2;
 
-      // Determine line offsets for multiple bonds
       final offsets = <double>[];
       if (b.order <= 1) {
         offsets.add(0);
@@ -425,67 +416,66 @@ class MoleculePainter extends CustomPainter {
         final aPt = Offset(p1.x, p1.y) + o;
         final bPt = Offset(p2.x, p2.y) + o;
         final mid = Offset((aPt.dx + bPt.dx) * 0.5, (aPt.dy + bPt.dy) * 0.5);
-        // draw two halves blending colors toward each atom
+        final opacityFactor = (0.85 * (0.8 + 0.2 * avgPersp)).clamp(0.0, 1.0);
         final paintA = Paint()
           ..style = PaintingStyle.stroke
           ..strokeCap = StrokeCap.round
-          ..strokeWidth = baseThickness
-          ..color = aColor.withOpacity(0.85 * (0.8 + 0.2 * avgPersp));
+          ..strokeWidth = baseThickness.clamp(0.5, 20.0)
+          ..color = aColor.withOpacity(opacityFactor);
         final paintB = Paint()
           ..style = PaintingStyle.stroke
           ..strokeCap = StrokeCap.round
-          ..strokeWidth = baseThickness
-          ..color = bColor.withOpacity(0.85 * (0.8 + 0.2 * avgPersp));
+          ..strokeWidth = baseThickness.clamp(0.5, 20.0)
+          ..color = bColor.withOpacity(opacityFactor);
 
         canvas.drawLine(aPt, mid, paintA);
         canvas.drawLine(mid, bPt, paintB);
       }
     }
 
-    // Draw atoms with shading and outlines, nearest last (on top)
     for (final idx in order) {
       final p = pts[idx];
       final element = p.element;
       final color = elementColors[element] ?? const Color(0xFF888888);
-      final baseR = (elementRadii[element] ?? 0.3) * 8.0; // tuned visual radius
-      final radius = baseR * p.persp; // perspective-scaled
+      final baseR = (elementRadii[element] ?? 0.3) * 8.0;
+      final radius = (baseR * p.persp).clamp(0.1, 1000.0);
       final centerPt = Offset(p.x, p.y);
 
-      // Base sphere
       final atomPaint = Paint()..color = color;
       canvas.drawCircle(centerPt, radius, atomPaint);
 
-      // Soft highlight to suggest lighting (from top-left)
       final lightDir = Offset(-0.6, -0.8);
       final lightOffset = Offset(
         lightDir.dx * radius * 0.4,
         lightDir.dy * radius * 0.4,
       );
+      final highlightRadius = (radius * 0.55).clamp(0.1, 1000.0);
       final highlightPaint = Paint()
         ..color = Colors.white.withOpacity(0.18)
         ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 6);
-      canvas.drawCircle(centerPt + lightOffset, radius * 0.55, highlightPaint);
+      canvas.drawCircle(centerPt + lightOffset, highlightRadius, highlightPaint);
 
-      // Rim light/dark outline
+      final outlineWidth = math.max(1.0, radius * 0.08).clamp(1.0, 20.0);
       canvas.drawCircle(
         centerPt,
         radius,
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = math.max(1.0, radius * 0.08)
+          ..strokeWidth = outlineWidth
           ..color = Colors.black.withOpacity(0.15),
       );
 
-      // Selection ring
       if (selectedAtomIdx != null &&
           pts[selectedAtomIdx!].x == p.x &&
           pts[selectedAtomIdx!].y == p.y) {
+        final selectionRadius = (radius * 1.25).clamp(0.1, 1000.0);
+        final selectionWidth = math.max(2.0, radius * 0.12).clamp(2.0, 20.0);
         canvas.drawCircle(
           centerPt,
-          radius * 1.25,
+          selectionRadius,
           Paint()
             ..style = PaintingStyle.stroke
-            ..strokeWidth = math.max(2.0, radius * 0.12)
+            ..strokeWidth = selectionWidth
             ..color = Colors.amber.withOpacity(0.8),
         );
       }
@@ -504,7 +494,7 @@ class MoleculePainter extends CustomPainter {
 class _Pt {
   final double x, y, z;
   final String element;
-  final double persp; // perspective factor used for sizing/thickness
+  final double persp;
   _Pt(this.x, this.y, this.z, this.element, this.persp);
 }
 
