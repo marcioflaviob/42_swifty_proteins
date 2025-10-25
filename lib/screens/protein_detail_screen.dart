@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/protein.dart';
-import '../services/share_service.dart';
 import './protein_3d_screen.dart';
 import './protein_ngl3d_screen.dart';
+import './protein_native3d_screen.dart';
 
 class ProteinDetailScreen extends StatelessWidget {
   final Protein protein;
@@ -15,12 +15,8 @@ class ProteinDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(protein.name),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () => _shareProtein(context),
-          ),
-        ],
+        // Sharing is supported inside each 3D model screen via its own share action.
+        actions: const [],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -161,38 +157,66 @@ class ProteinDetailScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Row(
+                    Column(
                       children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      Protein3DScreen(ligandId: protein.name),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.view_in_ar),
-                            label: const Text('Model 1'),
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => Protein3DScreen(
+                                        ligandId: protein.name,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.view_in_ar),
+                                label: const Text('Model 1'),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ProteinNGLScreen(
+                                        ligandId: protein.name,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.view_in_ar),
+                                label: const Text('Model 2'),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      ProteinNGLScreen(ligandId: protein.name),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.view_in_ar),
-                            label: const Text('Model 2'),
-                          ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          ProteinNative3DScreen(
+                                            ligandId: protein.name,
+                                          ),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.view_in_ar),
+                                label: const Text('Model 3 (Native)'),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -204,22 +228,6 @@ class ProteinDetailScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Future<void> _shareProtein(BuildContext context) async {
-    try {
-      final shareService = ShareService();
-      await shareService.shareProtein(protein);
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to share protein: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
   }
 
   Widget _buildPropertyRow(
