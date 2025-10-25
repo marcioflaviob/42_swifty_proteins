@@ -77,6 +77,64 @@ class _ProteinNative3DScreenState extends State<ProteinNative3DScreen> {
     }
   }
 
+  Future<void> _saveToGallery() async {
+    if (_molecule == null) return;
+    try {
+      // Capture current view
+      final boundary =
+          _captureKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
+      if (boundary == null) return;
+      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) return;
+      final Uint8List bytes = byteData.buffer.asUint8List();
+      await ShareService().saveToGallery(
+        bytes,
+        fileName: '${widget.ligandId}.png',
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Image saved to gallery!')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to save image: $e')));
+    }
+  }
+
+  void _showShareMenu() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.save_alt),
+                title: const Text('Save to Gallery'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _saveToGallery();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.share),
+                title: const Text('Share'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _shareImage();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -84,9 +142,9 @@ class _ProteinNative3DScreenState extends State<ProteinNative3DScreen> {
         title: Text('3D View (Native): ${widget.ligandId}'),
         actions: [
           IconButton(
-            onPressed: _molecule == null ? null : _shareImage,
-            icon: const Icon(Icons.share),
-            tooltip: 'Share image',
+            onPressed: _molecule == null ? null : _showShareMenu,
+            icon: const Icon(Icons.more_vert),
+            tooltip: 'Share or Save',
           ),
         ],
       ),

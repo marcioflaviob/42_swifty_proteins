@@ -41,6 +41,10 @@
 	<string>This app uses biometrics to securely log you in without a password.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>This app uses Face ID to securely log you in without a password.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>This app needs permission to save protein images to your photo library.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs permission to access your photo library to save protein images.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

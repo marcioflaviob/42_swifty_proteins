@@ -43,14 +43,72 @@ class Protein3DScreen extends StatelessWidget {
       }
     }
 
+    Future<void> captureAndSave() async {
+      try {
+        final result = await controller.runJavaScriptReturningResult(
+          'capturePng()',
+        );
+        if (result is String && result.isNotEmpty) {
+          final String dataUrl = result.startsWith('"')
+              ? jsonDecode(result)
+              : result;
+          await ShareService().saveDataUrlToGallery(
+            dataUrl,
+            fileName: '$ligandId-3dmol.png',
+          );
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Image saved to gallery!')),
+            );
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to save image: $e')),
+          );
+        }
+      }
+    }
+
+    void showShareMenu() {
+      showModalBottomSheet(
+        context: context,
+        builder: (BuildContext context) {
+          return SafeArea(
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.save_alt),
+                  title: const Text('Save to Gallery'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    captureAndSave();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.share),
+                  title: const Text('Share'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    captureAndShare();
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('3D View: $ligandId'),
         actions: [
           IconButton(
-            onPressed: captureAndShare,
-            icon: const Icon(Icons.share),
-            tooltip: 'Share image',
+            onPressed: showShareMenu,
+            icon: const Icon(Icons.more_vert),
+            tooltip: 'Share or Save',
           ),
         ],
       ),
